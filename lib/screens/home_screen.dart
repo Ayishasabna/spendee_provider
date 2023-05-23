@@ -1,0 +1,167 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:spendee/db/income_expence.dart';
+import 'package:spendee/db/transaction_db.dart';
+import 'package:spendee/provider/income_expence.dart';
+import 'package:spendee/screens/transaction/transactions.dart';
+import 'package:spendee/widgets/home_head.dart';
+import 'package:spendee/widgets/uppercase.dart';
+import '../models/transactions/transaction_model.dart';
+import '../provider/category_provider.dart';
+import '../provider/transaction_provider.dart';
+import 'transaction/transactionlist.dart';
+
+//enum SearchItems { categories, date, description }
+
+final List<String> day = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
+
+class Home extends StatelessWidget {
+  Home({super.key});
+
+  var displayList = [];
+
+  @override
+  Widget build(BuildContext context) {
+    final Size size = MediaQuery.of(context).size;
+    final double screenWidth = size.width;
+    final double screenHeight = size.height;
+    Provider.of<ProviderTransaction>(context).refreshUi();
+    Provider.of<CategoryProvider>(context).refreshUI();
+    /* print(Provider.of<ProviderTransaction>(context, listen: false)
+        .transactionListProvider); */
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      Provider.of<ProviderTransaction>(context, listen: false)
+              .overviewGraphTransactions =
+          Provider.of<ProviderTransaction>(context, listen: false)
+              .transactionListProvider;
+    });
+
+    // ignore: unused_local_variable
+
+    return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(body: SafeArea(child: Consumer<ProviderTransaction>(
+            builder: (context, IncomeAndExpence, child) {
+          return Column(children: [
+            //HomeHead(),
+            SizedBox(
+                height: screenHeight * .44,
+                width: screenWidth,
+                child: HomeHead(
+                  key: UniqueKey(),
+                )),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Recent Transactions',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 17,
+                          color: Color.fromARGB(255, 15, 14, 14))),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => Transactions()));
+                    },
+                    child: const Text('See all',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 17,
+                            color: Color.fromARGB(255, 15, 14, 14))),
+                  )
+                ],
+              ),
+            ),
+            Expanded(
+              child: Container(
+                color: Colors.white24,
+                height: 300,
+                child: Consumer<ProviderTransaction>(
+                    builder: (context, newList, child) {
+                  return (newList.transactionListProvider.isEmpty)
+                      ? const Center(
+                          child: Text('No transactions added yet'),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(5),
+                          itemBuilder: (ctx, index) {
+                            /*  final int lastIndex =
+                                            transactionDB.length - 1; */
+                            /* final int reversedIndex =
+                                            lastIndex - index; */
+
+                            final value =
+                                newList.transactionListProvider[index];
+                            //reversedIndex];
+                            return Card(
+                              color: const Color.fromARGB(255, 248, 246, 246),
+                              elevation: 0,
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor:
+                                      const Color.fromARGB(255, 244, 240, 228),
+                                  radius: 50,
+                                  child: Image.asset(
+                                    'assets/images/image/${value.category.categoryImage}.png',
+                                    height: 30,
+                                    width: 30,
+                                  ),
+                                ),
+
+                                title: Text('₹ ${value.amount}',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 17,
+                                        color: value.finanace == 'income'
+                                            ? Colors.green
+                                            : Colors.red)),
+                                subtitle: Text(
+                                    value.category.categoryName.capitalize()),
+                                trailing: Text(
+                                  parseDateTime(value.datetime),
+                                ),
+                                //
+                              ),
+                            );
+                          },
+                          separatorBuilder: (ctx, index) {
+                            return const Divider(
+                              height: 4,
+                              thickness: 2,
+                            );
+                          },
+                          itemCount: newList.transactionListProvider.length > 3
+                              ? 3
+                              : newList.transactionListProvider.length,
+                        );
+                }),
+              ),
+            )
+          ]);
+        }))));
+  }
+
+  /* ValueListenableBuilder(
+                    valueListenable:
+                        TransactionDB.instance.transactionListNotifier,
+                    //transactionDB.listenable(),
+                    builder: (context, value, index) { */
+
+  /* ValueListenableBuilder(
+                          valueListenable:
+                              TransactionDB.instance.transactionListNotifier,
+                          builder: (BuildContext ctx,
+                              List<TransactionModel> newList, Widget? _) */
+}
+
+String parseDateTime(DateTime date) {
+  final dateFormatted = DateFormat.MMMMd().format(date);
+
+  final splitedDate = dateFormatted.split(' ');
+
+  return "${splitedDate.last}  ${splitedDate.first} ";
+}
